@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
-
-
 /**
  *
  * @author Ryan Dave
@@ -28,13 +26,11 @@ public class NewJFrame extends javax.swing.JFrame {
     public NewJFrame() {
 
     initComponents();
-    
-    
-    
 
     model = (DefaultTableModel) tblEmployees.getModel();
+
     loadEmployees();
-    model.setRowCount(0);
+
     tblEmployees.getSelectionModel().addListSelectionListener(e -> {
 
         if (!e.getValueIsAdjusting()) {
@@ -44,29 +40,29 @@ public class NewJFrame extends javax.swing.JFrame {
             if (row >= 0) {
 
                 txtID.setText(
-                        tblEmployees.getValueAt(row, 0).toString()
+                    tblEmployees.getValueAt(row, 0).toString()
                 );
 
                 txtName.setText(
-                        tblEmployees.getValueAt(row, 1).toString()
+                    tblEmployees.getValueAt(row, 1).toString()
                 );
 
                 cmbDepartment.setSelectedItem(
-                        tblEmployees.getValueAt(row, 2).toString()
+                    tblEmployees.getValueAt(row, 2).toString()
                 );
 
                 txtPosition.setText(
-                        tblEmployees.getValueAt(row, 3).toString()
+                    tblEmployees.getValueAt(row, 3).toString()
                 );
 
                 txtSalary.setText(
-                        tblEmployees.getValueAt(row, 4).toString()
+                    tblEmployees.getValueAt(row, 4).toString()
                 );
             }
         }
     });
-
 }
+
     private void clearFields() {
 
     txtID.setText("");
@@ -83,14 +79,16 @@ public class NewJFrame extends javax.swing.JFrame {
     tblEmployees.clearSelection();
 }
 
-    private void loadEmployees() {
+   private void loadEmployees() {
 
     model.setRowCount(0);
 
-    String sql = "SELECT * FROM employees";
+    String sql =
+        "SELECT employee_id, [name], [department], [position], [salary] " +
+        "FROM employees";
 
     try (
-        Connection con = DBConnection.getConnection();
+        Connection con = MSConnection.conn();
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery(sql)
     ) {
@@ -98,7 +96,7 @@ public class NewJFrame extends javax.swing.JFrame {
         while (rs.next()) {
 
             model.addRow(new Object[]{
-                rs.getInt("id"),
+                rs.getInt("employee_id"),
                 rs.getString("name"),
                 rs.getString("department"),
                 rs.getString("position"),
@@ -110,10 +108,11 @@ public class NewJFrame extends javax.swing.JFrame {
 
         JOptionPane.showMessageDialog(
             this,
-            "Error: " + e.getMessage()
+            "Error loading employees:\n" + e.getMessage()
         );
     }
 }
+
 
 
 
@@ -267,117 +266,25 @@ public class NewJFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        String sql = "INSERT INTO employees "
-        + "(id, name, department, position, salary) "
-        + "VALUES (?, ?, ?, ?, ?)";
+       String name = txtName.getText().trim();
+    String department = cmbDepartment.getSelectedItem().toString().trim();
+    String position = txtPosition.getText().trim();
+    String salaryText = txtSalary.getText().trim();
 
-try {
-
-    Connection con = DBConnection.getConnection();
-
-    PreparedStatement pst =
-            con.prepareStatement(sql);
-
-    pst.setInt(
-            1,
-            Integer.parseInt(txtID.getText())
-    );
-
-    pst.setString(
-            2,
-            txtName.getText()
-    );
-
-    pst.setString(
-            3,
-            cmbDepartment.getSelectedItem().toString()
-    );
-
-    pst.setString(
-            4,
-            txtPosition.getText()
-    );
-
-    pst.setDouble(
-            5,
-            Double.parseDouble(txtSalary.getText())
-    );
-
-    pst.executeUpdate();
-
-    JOptionPane.showMessageDialog(
-            this,
-            "Employee Added!"
-    );
-
-    loadEmployees();
-
-    con.close();
-
-} catch (Exception e) {
-
-    JOptionPane.showMessageDialog(
-            this,
-            e.getMessage()
-    );
-}
-
-    }//GEN-LAST:event_btnAddActionPerformed
-
-    private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformed
-      // Check kung may selected employee
-    int selectedRow = tblEmployees.getSelectedRow();
-
-    if (selectedRow == -1) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Please select an employee from the table first."
-        );
-        return;
-    }
-
-    // Kunin ang ID mula sa selected row
-    String idText = tblEmployees
-            .getValueAt(selectedRow, 0)
-            .toString()
-            .trim();
-
-    int id;
-
-    try {
-        id = Integer.parseInt(idText);
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Invalid Employee ID: " + idText
-        );
-        return;
-    }
-
-    // Check required fields
-    if (txtName.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Please enter Full Name."
-        );
+    if (name.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter Full Name.");
         txtName.requestFocus();
         return;
     }
 
-    if (txtPosition.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Please enter Position."
-        );
+    if (position.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter Position.");
         txtPosition.requestFocus();
         return;
     }
 
-    if (txtSalary.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Please enter Salary."
-        );
+    if (salaryText.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter Salary.");
         txtSalary.requestFocus();
         return;
     }
@@ -385,81 +292,154 @@ try {
     double salary;
 
     try {
-        salary = Double.parseDouble(
-                txtSalary.getText().trim()
-        );
+        salary = Double.parseDouble(salaryText);
     } catch (NumberFormatException e) {
         JOptionPane.showMessageDialog(
-                this,
-                "Salary must be a valid number."
+            this,
+            "Salary must be a valid number."
         );
         txtSalary.requestFocus();
         return;
     }
 
-    String sql = "UPDATE employees SET "
-            + "name = ?, "
-            + "department = ?, "
-            + "position = ?, "
-            + "salary = ? "
-            + "WHERE id = ?";
+    String sql =
+        "INSERT INTO employees " +
+        "([name], [department], [position], [salary]) " +
+        "VALUES (?, ?, ?, ?)";
 
     try (
-        Connection con = DBConnection.getConnection();
+        Connection con = MSConnection.conn();
         PreparedStatement pst = con.prepareStatement(sql)
     ) {
 
-        pst.setString(
-                1,
-                txtName.getText().trim()
+        pst.setString(1, name);
+        pst.setString(2, department);
+        pst.setString(3, position);
+        pst.setDouble(4, salary);
+
+        pst.executeUpdate();
+
+        JOptionPane.showMessageDialog(
+            this,
+            "Employee Added Successfully!"
         );
 
-        pst.setString(
-                2,
-                cmbDepartment.getSelectedItem().toString()
+        loadEmployees();
+        clearFields();
+
+    } catch (SQLException e) {
+
+        JOptionPane.showMessageDialog(
+            this,
+            "Database Error:\n" + e.getMessage()
+        );
+    }
+
+    }//GEN-LAST:event_btnAddActionPerformed
+
+    private void btnUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUpdateActionPerformed
+      int selectedRow = tblEmployees.getSelectedRow();
+
+    if (selectedRow == -1) {
+        JOptionPane.showMessageDialog(
+            this,
+            "Please select an employee from the table first."
+        );
+        return;
+    }
+
+    int employeeId;
+
+    try {
+
+        employeeId = Integer.parseInt(
+            tblEmployees.getValueAt(selectedRow, 0).toString()
         );
 
-        pst.setString(
-                3,
-                txtPosition.getText().trim()
-        );
+    } catch (NumberFormatException e) {
 
-        pst.setDouble(
-                4,
-                salary
+        JOptionPane.showMessageDialog(
+            this,
+            "Invalid Employee ID."
         );
+        return;
+    }
 
-        pst.setInt(
-                5,
-                id
+    String name = txtName.getText().trim();
+    String department =
+        cmbDepartment.getSelectedItem().toString().trim();
+    String position = txtPosition.getText().trim();
+    String salaryText = txtSalary.getText().trim();
+
+    if (name.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter Full Name.");
+        return;
+    }
+
+    if (position.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter Position.");
+        return;
+    }
+
+    double salary;
+
+    try {
+
+        salary = Double.parseDouble(salaryText);
+
+    } catch (NumberFormatException e) {
+
+        JOptionPane.showMessageDialog(
+            this,
+            "Salary must be a valid number."
         );
+        return;
+    }
+
+    String sql =
+        "UPDATE employees SET " +
+        "[name] = ?, " +
+        "[department] = ?, " +
+        "[position] = ?, " +
+        "[salary] = ? " +
+        "WHERE employee_id = ?";
+
+    try (
+        Connection con = MSConnection.conn();
+        PreparedStatement pst = con.prepareStatement(sql)
+    ) {
+
+        pst.setString(1, name);
+        pst.setString(2, department);
+        pst.setString(3, position);
+        pst.setDouble(4, salary);
+        pst.setInt(5, employeeId);
 
         int rows = pst.executeUpdate();
 
         if (rows > 0) {
 
             JOptionPane.showMessageDialog(
-                    this,
-                    "Employee updated successfully!"
+                this,
+                "Employee updated successfully!"
             );
 
             loadEmployees();
-
             clearFields();
 
         } else {
 
             JOptionPane.showMessageDialog(
-                    this,
-                    "Employee ID not found."
+                this,
+                "Employee not found."
             );
         }
 
     } catch (SQLException e) {
 
         JOptionPane.showMessageDialog(
-                this,
-                "Database Error:\n" + e.getMessage()
+            this,
+            "Database Error:\n" + e.getMessage()
         );
     }
 
@@ -468,85 +448,83 @@ try {
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
       
-    int selectedRow = tblEmployees.getSelectedRow();
+  int selectedRow = tblEmployees.getSelectedRow();
 
     if (selectedRow == -1) {
+
         JOptionPane.showMessageDialog(
-                this,
-                "Please select an employee from the table first."
+            this,
+            "Please select an employee first."
         );
+
         return;
     }
 
-    String idText = tblEmployees
-            .getValueAt(selectedRow, 0)
-            .toString()
-            .trim();
-
-    int id;
+    int employeeId;
 
     try {
-        id = Integer.parseInt(idText);
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Invalid Employee ID: " + idText
+
+        employeeId = Integer.parseInt(
+            tblEmployees.getValueAt(selectedRow, 0).toString()
         );
+
+    } catch (NumberFormatException e) {
+
+        JOptionPane.showMessageDialog(
+            this,
+            "Invalid Employee ID."
+        );
+
         return;
     }
 
     int confirm = JOptionPane.showConfirmDialog(
-            this,
-            "Are you sure you want to delete Employee ID " + id + "?",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION
+        this,
+        "Are you sure you want to delete Employee ID "
+            + employeeId + "?",
+        "Confirm Delete",
+        JOptionPane.YES_NO_OPTION
     );
 
     if (confirm != JOptionPane.YES_OPTION) {
         return;
     }
 
-    String sql = "DELETE FROM employees WHERE id = ?";
+    String sql =
+        "DELETE FROM employees WHERE employee_id = ?";
 
     try (
-        Connection con = DBConnection.getConnection();
+        Connection con = MSConnection.conn();
         PreparedStatement pst = con.prepareStatement(sql)
     ) {
 
-        pst.setInt(1, id);
+        pst.setInt(1, employeeId);
 
         int rows = pst.executeUpdate();
 
         if (rows > 0) {
 
             JOptionPane.showMessageDialog(
-                    this,
-                    "Employee deleted successfully!"
+                this,
+                "Employee deleted successfully!"
             );
 
             loadEmployees();
-
-            // Clear fields
-            txtID.setText("");
-            txtName.setText("");
-            txtPosition.setText("");
-            txtSalary.setText("");
-            cmbDepartment.setSelectedIndex(0);
-            tblEmployees.clearSelection();
+            clearFields();
 
         } else {
 
             JOptionPane.showMessageDialog(
-                    this,
-                    "Employee ID not found."
+                this,
+                "Employee not found."
             );
         }
 
     } catch (SQLException e) {
 
         JOptionPane.showMessageDialog(
-                this,
-                "Database Error:\n" + e.getMessage()
+            this,
+            "Database Error:\n" + e.getMessage()
         );
     }
 
@@ -557,59 +535,61 @@ try {
     txtName.setText("");
     txtPosition.setText("");
     txtSalary.setText("");
-    cmbDepartment.setSelectedIndex(0);
     txtSearch.setText("");
+
+    if (cmbDepartment.getItemCount() > 0) {
+        cmbDepartment.setSelectedIndex(0);
+    }
 
     tblEmployees.clearSelection();
 
     }//GEN-LAST:event_btnClearActionPerformed
 
     private void btnSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSearchActionPerformed
-       String search = txtSearch.getText();
+        String search = txtSearch.getText().trim();
 
-model.setRowCount(0);
+    model.setRowCount(0);
 
-String sql = "SELECT * FROM employees "
-        + "WHERE name LIKE ? "
-        + "OR department LIKE ? "
-        + "OR position LIKE ?";
+    String sql =
+        "SELECT employee_id, [name], [department], " +
+        "[position], [salary] " +
+        "FROM employees " +
+        "WHERE [name] LIKE ? " +
+        "OR [department] LIKE ? " +
+        "OR [position] LIKE ?";
 
-try {
+    try (
+        Connection con = MSConnection.conn();
+        PreparedStatement pst = con.prepareStatement(sql)
+    ) {
 
-    Connection con =
-            DBConnection.getConnection();
+        String keyword = "*" + search + "*";
 
-    PreparedStatement pst =
-            con.prepareStatement(sql);
+        pst.setString(1, keyword);
+        pst.setString(2, keyword);
+        pst.setString(3, keyword);
 
-    String keyword = "%" + search + "%";
+        try (ResultSet rs = pst.executeQuery()) {
 
-    pst.setString(1, keyword);
-    pst.setString(2, keyword);
-    pst.setString(3, keyword);
+            while (rs.next()) {
 
-    ResultSet rs = pst.executeQuery();
+                model.addRow(new Object[]{
+                    rs.getInt("employee_id"),
+                    rs.getString("name"),
+                    rs.getString("department"),
+                    rs.getString("position"),
+                    rs.getDouble("salary")
+                });
+            }
+        }
 
-    while (rs.next()) {
+    } catch (SQLException e) {
 
-        model.addRow(new Object[]{
-            rs.getInt("id"),
-            rs.getString("name"),
-            rs.getString("department"),
-            rs.getString("position"),
-            rs.getDouble("salary")
-        });
-    }
-
-    con.close();
-
-} catch (Exception e) {
-
-    JOptionPane.showMessageDialog(
+        JOptionPane.showMessageDialog(
             this,
-            e.getMessage()
-    );
-}
+            "Search Error:\n" + e.getMessage()
+        );
+    }
 
     }//GEN-LAST:event_btnSearchActionPerformed
 
