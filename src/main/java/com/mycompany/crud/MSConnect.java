@@ -11,7 +11,7 @@ public class MSConnect {
 
         try {
 
-            String url = "jdbc:ucanaccess://C:/Users/Ryan Dave/Documents/lala.accdb";
+            String url = "jdbc:ucanaccess://C:/Users/CL2-PC/Downloads/crud_access-main/crud_access-main/lala.accdb";
 
             Connection conn = DriverManager.getConnection(url);
 
